@@ -4,6 +4,8 @@ import tkinter.messagebox as mb
 
 from PIL import Image, ImageTk
 from predictor import Visualization
+import webbrowser
+
 
 class App(tk.Tk):
     # Phương thức khởi tạo
@@ -69,8 +71,8 @@ class App(tk.Tk):
         menu.add_cascade(label="Run", menu=run_menu)
         # Tạo menu Help
         help_menu = tk.Menu(menu, tearoff=False)
-        help_menu.add_command(label="Video Demo", command=None)
-        help_menu.add_command(label="About", command=None)
+        help_menu.add_command(label="Video Demo", command=lambda: webbrowser.open("https://www.youtube.com/"))
+        help_menu.add_command(label="About", command=lambda: webbrowser.open("https://github.com/dantv2002/deep_learning_project/blob/main/README.md"))
         menu.add_cascade(label="Help", menu=help_menu)
         # Hiển thị menu
         self.config(menu=menu)
