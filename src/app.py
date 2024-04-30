@@ -27,7 +27,6 @@ class App(tk.Tk):
         self.create_menu()
         # Frame
         self.current_selected_image_label = None  # Lưu label ảnh đang chọn
-        self.all_images_path = []  # Lưu đường dẫn tất cả ảnh
         self.create_frame()
         self.flag_result = False # Kiểm tra kết quả dự đoán có hoặc không
 
@@ -59,9 +58,7 @@ class App(tk.Tk):
         run_menu.add_command(
             label="Start Detect", accelerator="F5", command=lambda: self.start_detect()
         )
-        self.bind("<F5>", lambda event: self.start_detect())
-        run_menu.add_command(label="Detect All Images", accelerator="Shift+F5", command=lambda: self.start_detect(True))
-        self.bind("<Shift-F5>", lambda event: self.start_detect(True))
+        self.bind("<F5>", lambda event: self.start_detect()) 
         run_menu.add_separator()
         run_menu.add_radiobutton(
             label="Model 1", variable=self.radio_model, value=1
@@ -78,16 +75,14 @@ class App(tk.Tk):
         # Hiển thị menu
         self.config(menu=menu)
 
-    def start_detect(self, detect_all=False):
-        if((self.current_selected_image_label is not None) and (len(self.all_images_path) > 0)):
+    def start_detect(self):
+        if(self.current_selected_image_label is not None):
             self.predictor.cfg(self.radio_model.get())
-            if detect_all:
-                result = self.predictor.run(self.all_images_path)
-            else:
-                result= self.predictor.run([self.current_selected_image_label.image_path])
+            result = self.predictor.run(self.current_selected_image_label.image_path)
 
             self.img_result = Image.fromarray(result)
             self.img_result.thumbnail((700, 700), Image.LANCZOS)
+
             img = ImageTk.PhotoImage(self.img_result)
             self.selected_image_label.config(image=img)
             self.selected_image_label.image = img # giữ tham chiếu
@@ -225,8 +220,6 @@ class App(tk.Tk):
             self.canvas_images.config(
                 scrollregion=self.canvas_images.bbox("all")
             )  # canvas_images.bbox("all") trả về tọa độ của hcn bao quanh nội dung của canvas
-            # Lưu đường dẫn ảnh vào all_images_path
-            self.all_images_path.append(file_name)
 
     def quit(self):
         message = "Do you want to close the window?"

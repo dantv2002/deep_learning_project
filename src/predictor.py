@@ -10,7 +10,7 @@ class Visualization:
         print("Running...")
         print(f"Image path: {image_path}")
 
-        img = cv2.imread(image_path[0])
+        img = cv2.imread(image_path)
         cv2.rectangle(img, (0, 0), (100, 100), (0, 255, 0), 2)
         cv2.putText(img, "DEMO", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         
