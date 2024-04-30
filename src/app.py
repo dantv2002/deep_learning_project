@@ -24,6 +24,8 @@ class App(tk.Tk):
         self.configure(background="#343746")
         # Tạo menu
         self.create_menu()
+         # Frame
+        self.create_frame()
 
     def create_menu(self):
         # Tạo menu chính
@@ -72,13 +74,11 @@ class App(tk.Tk):
         menu.add_cascade(label="Help", menu=help_menu)
         # Hiển thị menu
         self.config(menu=menu)
-        # Frame
-        self.create_frame()
 
     def image_click(self, event):
-        event.widget.config(bg="#1376F8")
         if self.current_selected_image_label is not None:
             self.current_selected_image_label.config(bg="#343746")
+        event.widget.config(bg="#1376F8")
         image_path = event.widget.image_path
         self.image_name_label.config(text=image_path.split("/")[-1])
         img = Image.open(image_path)
