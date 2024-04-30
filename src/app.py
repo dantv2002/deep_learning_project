@@ -132,22 +132,23 @@ class App(tk.Tk):
             frame_selected_image, background="#343746"
         )
         self.selected_image_label.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        # Tạo frame cho kết quả dự đoán
-        frame_prediction = tk.Frame(
+        # NOTE Tạo frame đệm cho kết quả dự đoán
+        frame_cache = tk.Frame(
             frame_right,
-            background="#282A36",
-            highlightbackground="#FFFFFF",
-            highlightthickness=1,
+            background="#343746",
+            height=150,
+            # highlightbackground="#FFFFFF",
+            # highlightthickness=1,
         )
-        frame_prediction.grid(row=1, column=0, sticky="nsew")
-        title_frame_prediction = tk.Label(
-            frame_prediction,
-            text="Result: ",
-            fg="#FFFFFF",
-            background="#282A36",
-            font=("Arial", 15, "bold"),
-        )
-        title_frame_prediction.pack(side=tk.TOP, pady=10, padx=10, anchor="w")
+        frame_cache.grid(row=1, column=0, sticky="nsew")
+        # title_frame_prediction = tk.Label(
+        #     frame_prediction,
+        #     text="Result: ",
+        #     fg="#FFFFFF",
+        #     background="#282A36",
+        #     font=("Arial", 15, "bold"),
+        # )
+        # title_frame_prediction.pack(side=tk.TOP, pady=10, padx=10, anchor="w")
         # Cấu hình frame
         frame_right.rowconfigure(
             0, weight=1
