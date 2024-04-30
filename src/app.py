@@ -3,13 +3,14 @@ import tkinter.filedialog as fd
 import tkinter.messagebox as mb
 
 from PIL import Image, ImageTk
-
+from predictor import Visualization
 
 class App(tk.Tk):
     # Phương thức khởi tạo
     def __init__(self, width_size=1200, height_size=680):
         super().__init__()
-
+        # Tạo đối tượng Visualization
+        self.predictor = Visualization()
         # Đặt logo
         icon = tk.PhotoImage(file="../images/Logo.png")
         self.iconphoto(True, icon)
@@ -24,8 +25,11 @@ class App(tk.Tk):
         self.configure(background="#343746")
         # Tạo menu
         self.create_menu()
-         # Frame
+        # Frame
+        self.current_selected_image_label = None  # Lưu label ảnh đang chọn
+        self.all_images_path = []  # Lưu đường dẫn tất cả ảnh
         self.create_frame()
+        self.flag_result = False # Kiểm tra kết quả dự đoán có hoặc không
 
     def create_menu(self):
         # Tạo menu chính
@@ -38,8 +42,8 @@ class App(tk.Tk):
             command=lambda: self.select_file(),
         )
         self.bind("<Control-o>", lambda event: self.select_file())
-        file_menu.add_command(label="Save", accelerator="Ctrl+S", command=None)
-        # self.bind("<Control-s>", lambda event: self.save_file())
+        file_menu.add_command(label="Save", accelerator="Ctrl+S", command=lambda: self.save_file())
+        self.bind("<Control-s>", lambda event: self.save_file())
         file_menu.add_separator()
         file_menu.add_command(
             label="Close Window",
@@ -49,22 +53,21 @@ class App(tk.Tk):
         self.bind("<Control-w>", lambda event: self.quit())
         menu.add_cascade(label="File", menu=file_menu)
         # Tạo menu Run
-        self.radio_model = tk.StringVar()
-        self.radio_model.set("1")  # Mặc định chọn model 1
-        self.radio_model.trace_add(
-            "write", self.mark_radio_model
-        )  # Theo dõi thay đổi giá trị radio_model
+        self.radio_model = tk.IntVar()
+        self.radio_model.set(1)  # Mặc định chọn model 1
         run_menu = tk.Menu(menu, tearoff=False)
         run_menu.add_command(
-            label="Start Prediction", accelerator="F5", command=None
+            label="Start Detect", accelerator="F5", command=lambda: self.start_detect()
         )
-        # self.bind("<F5>", lambda event: None)
+        self.bind("<F5>", lambda event: self.start_detect())
+        run_menu.add_command(label="Detect All Images", accelerator="Shift+F5", command=lambda: self.start_detect(True))
+        self.bind("<Shift-F5>", lambda event: self.start_detect(True))
         run_menu.add_separator()
         run_menu.add_radiobutton(
-            label="Model 1", variable=self.radio_model, value=1, command=None
+            label="Model 1", variable=self.radio_model, value=1
         )
         run_menu.add_radiobutton(
-            label="Model 2", variable=self.radio_model, value=2, command=None
+            label="Model 2", variable=self.radio_model, value=2
         )
         menu.add_cascade(label="Run", menu=run_menu)
         # Tạo menu Help
@@ -75,7 +78,26 @@ class App(tk.Tk):
         # Hiển thị menu
         self.config(menu=menu)
 
+    def start_detect(self, detect_all=False):
+        if((self.current_selected_image_label is not None) and (len(self.all_images_path) > 0)):
+            self.predictor.cfg(self.radio_model.get())
+            if detect_all:
+                result = self.predictor.run(self.all_images_path)
+            else:
+                result= self.predictor.run([self.current_selected_image_label.image_path])
+
+            self.img_result = Image.fromarray(result)
+            self.img_result.thumbnail((700, 700), Image.LANCZOS)
+            img = ImageTk.PhotoImage(self.img_result)
+            self.selected_image_label.config(image=img)
+            self.selected_image_label.image = img # giữ tham chiếu
+            self.flag_result = True # Có kết quả dự đoán
+        else:
+            mb.showerror(title="Error", message="Please select an image to detect", icon=mb.ERROR, parent=self)
+
     def image_click(self, event):
+        if self.flag_result and not mb.askyesno(title="Warning", message="Do you want to clear the detection result ?", icon=mb.WARNING, parent=self):
+            return
         if self.current_selected_image_label is not None:
             self.current_selected_image_label.config(bg="#343746")
         event.widget.config(bg="#1376F8")
@@ -87,9 +109,9 @@ class App(tk.Tk):
         self.selected_image_label.config(image=img)
         self.selected_image_label.image = img
         self.current_selected_image_label = event.widget
+        self.flag_result = False # Không có kết quả dự đoán
 
     def create_frame(self):
-        self.current_selected_image_label = None  # Lưu label ảnh đang chọn
         # Tạo frame bên trái
         frame_left = tk.Frame(self, width=300)
         frame_left.grid(row=0, column=0, sticky="ns")
@@ -156,8 +178,23 @@ class App(tk.Tk):
         scrollbar_images.pack(side=tk.RIGHT, fill=tk.Y)
         self.canvas_images.config(yscrollcommand=scrollbar_images.set)
 
-    def mark_radio_model(self, *args):
-        print(self.radio_model.get())
+    def save_file(self):
+        if self.flag_result:
+            new_file = fd.asksaveasfile(
+                title="Save image",
+                initialdir="../images/results",
+                defaultextension=".png",
+            )
+            if new_file:
+                self.img_result.save(new_file.name)
+                mb.showinfo(
+                    title="Information",
+                    message="Save image successfully",
+                    icon=mb.INFO,
+                    parent=self,
+                )
+        else:
+            mb.showerror(title="Error", message="Please run detect the image first", icon=mb.ERROR, parent=self)
 
     def select_file(self):
         file_types = [("Images", "*.png *.jpg *.jpeg *.bmp")]
@@ -188,6 +225,8 @@ class App(tk.Tk):
             self.canvas_images.config(
                 scrollregion=self.canvas_images.bbox("all")
             )  # canvas_images.bbox("all") trả về tọa độ của hcn bao quanh nội dung của canvas
+            # Lưu đường dẫn ảnh vào all_images_path
+            self.all_images_path.append(file_name)
 
     def quit(self):
         message = "Do you want to close the window?"
