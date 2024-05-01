@@ -6,13 +6,34 @@ class Visualization:
     def cfg(self, model):
         print("Configuring model...")
         print(f"Model: {model}")
-    def run(self, image_path):
+        self.model = model
+    
+    def run(self, images)->list:
         print("Running...")
-        print(f"Image path: {image_path}")
-
-        img = cv2.imread(image_path)
-        cv2.rectangle(img, (0, 0), (100, 100), (0, 255, 0), 2)
-        cv2.putText(img, "DEMO", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        batch_image = [cv2.imread(image["image_path"]) for image in images]
+        image_result=self.predict(batch_image)
+        results = []
+        for i in range(len(images)):
+            
+            results.append({
+                "id": images[i]["id"],
+                "image": image_result[i]
+            })
+        return results
+    def predict(self, batch_image):
+        print("Predicting...")
+        results = []
+        for image in batch_image:
+            results.append(self.draw(image))
+        return results
+    def draw(self, image):
+        print("Drawing...")
+        if(self.model == 1):
+            color = (0, 255, 0)
+        else:
+            color = (255, 0, 0)
+        cv2.rectangle(image, (0, 0), (100, 100), color, 2)
+        cv2.putText(image, "DEMO", (0, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
         
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        return img
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        return image

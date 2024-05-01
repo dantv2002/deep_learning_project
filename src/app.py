@@ -30,7 +30,8 @@ class App(tk.Tk):
         # Frame
         self.current_selected_image_label = None  # Lưu label ảnh đang chọn
         self.create_frame()
-        self.flag_result = False # Kiểm tra kết quả dự đoán có hoặc không
+        self.img_dict = {} # Lưu ảnh hiển thị
+        self.img_id = 0 # Id ảnh
 
     def create_menu(self):
         # Tạo menu chính
@@ -58,9 +59,11 @@ class App(tk.Tk):
         self.radio_model.set(1)  # Mặc định chọn model 1
         run_menu = tk.Menu(menu, tearoff=False)
         run_menu.add_command(
-            label="Start Detect", accelerator="F5", command=lambda: self.start_detect()
+            label="Detect", accelerator="F5", command=lambda: self.start_detect()
         )
         self.bind("<F5>", lambda event: self.start_detect()) 
+        run_menu.add_command(label="Detect All", accelerator="Shift+F5", command=lambda: self.start_detect(True))
+        self.bind("<Shift-F5>", lambda event: self.start_detect(True))
         run_menu.add_separator()
         run_menu.add_radiobutton(
             label="Model 1", variable=self.radio_model, value=1
@@ -68,6 +71,9 @@ class App(tk.Tk):
         run_menu.add_radiobutton(
             label="Model 2", variable=self.radio_model, value=2
         )
+        run_menu.add_separator()
+        run_menu.add_command(label="Clear Detect", command=lambda: self.clear_detect())
+        run_menu.add_command(label="Clear All Detect", command=lambda: self.clear_detect(True))
         menu.add_cascade(label="Run", menu=run_menu)
         # Tạo menu Help
         help_menu = tk.Menu(menu, tearoff=False)
@@ -76,37 +82,97 @@ class App(tk.Tk):
         menu.add_cascade(label="Help", menu=help_menu)
         # Hiển thị menu
         self.config(menu=menu)
-
-    def start_detect(self):
-        if(self.current_selected_image_label is not None):
-            self.predictor.cfg(self.radio_model.get())
-            result = self.predictor.run(self.current_selected_image_label.image_path)
-
-            self.img_result = Image.fromarray(result)
-            self.img_result.thumbnail((700, 700), Image.LANCZOS)
-
-            img = ImageTk.PhotoImage(self.img_result)
-            self.selected_image_label.config(image=img)
-            self.selected_image_label.image = img # giữ tham chiếu
-            self.flag_result = True # Có kết quả dự đoán
+    
+    def clear_detect(self, clear_all=False):
+        if(not mb.askyesno(title="Warning", message="Do you want to clear the detection result ?", icon=mb.WARNING, parent=self)):
+            return
+        if(clear_all):
+            for label in self.img_dict.values():
+                img = Image.open(label.image_path)
+                label.image_original = img.copy()
+                img.thumbnail((280, 280), Image.LANCZOS)
+                img = ImageTk.PhotoImage(img)
+                label.config(image=img)
+                label.image = img
+        elif(self.current_selected_image_label is None):
+            mb.showwarning(
+                title="Warning",
+                message="Please select an image to clear detect",
+                icon=mb.WARNING,
+                parent=self,
+            )
+            return
         else:
-            mb.showerror(title="Error", message="Please select an image to detect", icon=mb.ERROR, parent=self)
+            img = Image.open(self.current_selected_image_label.image_path)
+            self.img_dict[self.current_selected_image_label.image_id].image_original = img.copy()
+            img.thumbnail((280, 280), Image.LANCZOS)
+            img = ImageTk.PhotoImage(img)
+            self.current_selected_image_label.config(image=img)
+            self.current_selected_image_label.image = img
+        
+        if(self.current_selected_image_label is not None):
+            img_current = self.img_dict[self.current_selected_image_label.image_id].image_original
+            img_current.thumbnail((700, 700), Image.LANCZOS)
+            img_current = ImageTk.PhotoImage(img_current)
+            self.selected_image_label.config(image=img_current)
+            self.selected_image_label.image = img_current
+            
+    def start_detect(self, detect_all=False):
+        self.predictor.cfg(self.radio_model.get())
+        if(detect_all):
+            if((len(self.img_dict) > 0)):
+                result = self.predictor.run([{
+                "id": label.image_id,
+                "image_path": label.image_path,
+                } for label in self.img_dict.values()])
+            else:
+                mb.showwarning(
+                    title="Warning",
+                    message="Please import an image to detect",
+                    icon=mb.WARNING,
+                    parent=self,
+                )
+                return
+        elif(self.current_selected_image_label is not None):
+            result = self.predictor.run([{
+                    "id": self.current_selected_image_label.image_id,
+                    "image_path": self.current_selected_image_label.image_path,
+                }])
+        else:
+            mb.showwarning(
+                title="Warning",
+                message="Please select an image to detect",
+                icon=mb.WARNING,
+                parent=self,
+            )
+            return
+        for item in result:
+            self.img_dict[item["id"]].image_original = Image.fromarray(item["image"])
+            img = Image.fromarray(item["image"])
+            img.thumbnail((280, 280), Image.LANCZOS)
+            img = ImageTk.PhotoImage(img)
+            self.img_dict[item["id"]].config(image=img)
+            self.img_dict[item["id"]].image = img
+        if(self.current_selected_image_label is not None):
+            img_current = self.img_dict[self.current_selected_image_label.image_id].image_original
+            img_current.thumbnail((700, 700), Image.LANCZOS)
+
+            img_current = ImageTk.PhotoImage(img_current)
+            self.selected_image_label.config(image=img_current)
+            self.selected_image_label.image = img_current # giữ tham chiếu
 
     def image_click(self, event):
-        if self.flag_result and not mb.askyesno(title="Warning", message="Do you want to clear the detection result ?", icon=mb.WARNING, parent=self):
-            return
         if self.current_selected_image_label is not None:
             self.current_selected_image_label.config(bg="#343746")
         event.widget.config(bg="#1376F8")
-        image_path = event.widget.image_path
+        image_path = self.img_dict[event.widget.image_id].image_path
         self.image_name_label.config(text=image_path.split("/")[-1])
-        img = Image.open(image_path)
+        img = self.img_dict[event.widget.image_id].image_original
         img.thumbnail((700, 700), Image.LANCZOS)
         img = ImageTk.PhotoImage(img)
         self.selected_image_label.config(image=img)
         self.selected_image_label.image = img
         self.current_selected_image_label = event.widget
-        self.flag_result = False # Không có kết quả dự đoán
 
     def create_frame(self):
         # Tạo frame bên trái
@@ -177,22 +243,21 @@ class App(tk.Tk):
         self.canvas_images.config(yscrollcommand=scrollbar_images.set)
 
     def save_file(self):
-        if self.flag_result:
-            new_file = fd.asksaveasfile(
-                title="Save image",
-                initialdir="../images/results",
-                defaultextension=".png",
+        new_file = fd.asksaveasfile(
+            title="Save image",
+            initialdir="../images/results",
+            defaultextension=".png",
+        )
+        if new_file:
+            self.img_dict[self.current_selected_image_label.image_id].image_original.save(
+                new_file.name
             )
-            if new_file:
-                self.img_result.save(new_file.name)
-                mb.showinfo(
-                    title="Information",
-                    message="Save image successfully",
-                    icon=mb.INFO,
-                    parent=self,
-                )
-        else:
-            mb.showerror(title="Error", message="Please run detect the image first", icon=mb.ERROR, parent=self)
+            mb.showinfo(
+                title="Information",
+                message="Save image successfully",
+                icon=mb.INFO,
+                parent=self,
+            )
 
     def select_file(self):
         file_types = [("Images", "*.png *.jpg *.jpeg *.bmp")]
@@ -204,15 +269,16 @@ class App(tk.Tk):
         if file_name:
             # Thêm ảnh vào frame_images_child
             img = Image.open(file_name)
+            img_original = img.copy() # Lưu ảnh gốc không tham chiếu đến img
             img.thumbnail(
                 (280, 280), Image.LANCZOS
             )  # Thu nhỏ kích thước ảnh và Image.LANCZOS giảm răng cưa khi thu nhỏ
             img = ImageTk.PhotoImage(img)
             label = tk.Label(self.frame_inside_canvas, image=img, bg="#343746")
             label.image = img  # giữ tham chiếu
-            label.image_path = (
-                file_name  # Thêm thuộc tính image_path cho label
-            )
+            label.image_path = file_name # Lưu đường dẫn ảnh
+            label.image_original = img_original # Lưu ảnh PIL gốc
+            label.image_id = self.img_id
             label.pack()
             label.bind(
                 "<Button-1>", self.image_click
@@ -223,6 +289,10 @@ class App(tk.Tk):
             self.canvas_images.config(
                 scrollregion=self.canvas_images.bbox("all")
             )  # canvas_images.bbox("all") trả về tọa độ của hcn bao quanh nội dung của canvas
+            # Thêm ảnh vào từ điển img_dict
+            self.img_dict[self.img_id] = label
+            self.img_id += 1
+
 
     def quit(self):
         message = "Do you want to close the window?"
