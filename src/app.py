@@ -261,12 +261,12 @@ class App(tk.Tk):
 
     def select_file(self):
         file_types = [("Images", "*.png *.jpg *.jpeg *.bmp")]
-        file_name = fd.askopenfilename(
+        file_names = fd.askopenfilenames(
             title="Select image",
             initialdir="../images/samples",
             filetypes=file_types,
         )
-        if file_name:
+        for file_name in file_names:
             # Thêm ảnh vào frame_images_child
             img = Image.open(file_name)
             img_original = img.copy() # Lưu ảnh gốc không tham chiếu đến img
