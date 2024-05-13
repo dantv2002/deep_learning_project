@@ -69,8 +69,8 @@ class App(tk.Tk):
             label="Detectron2 (R50_FPN_3x)", variable=self.radio_model, value=1
         ) # của Tuấn
         run_menu.add_radiobutton(
-            label="Model 2", variable=self.radio_model, value=2
-        ) # của Sơn
+            label="Detectron2 (R50_C4_3x)", variable=self.radio_model, value=2
+        )  # của Sơn
         run_menu.add_radiobutton(
             label="Model 3", variable=self.radio_model, value=3
         ) # của Dân
