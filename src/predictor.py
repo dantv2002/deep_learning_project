@@ -44,7 +44,9 @@ class Visualization:
         ]
         self.fruit_metadata = {"thing_classes": self.class_names}
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.predictor_list = []
+        self.predictor_list = (
+            []
+        )  # detectron2 với chỉ mục 0: model Model_R50_FPN_3x, chỉ mục 1: model của Sơn
         self.model_selected = 0
         self.detectron2_create_model(device=device)
 

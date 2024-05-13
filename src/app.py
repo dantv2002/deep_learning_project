@@ -66,11 +66,17 @@ class App(tk.Tk):
         self.bind("<Shift-F5>", lambda event: self.start_detect(True))
         run_menu.add_separator()
         run_menu.add_radiobutton(
-            label="Model 1", variable=self.radio_model, value=1
-        )
+            label="Detectron2 (R50_FPN_3x)", variable=self.radio_model, value=1
+        ) # của Tuấn
         run_menu.add_radiobutton(
             label="Model 2", variable=self.radio_model, value=2
-        )
+        ) # của Sơn
+        run_menu.add_radiobutton(
+            label="Model 3", variable=self.radio_model, value=3
+        ) # của Dân
+        run_menu.add_radiobutton(
+            label="Model 4", variable=self.radio_model, value=4
+        ) # của Đạt
         run_menu.add_separator()
         run_menu.add_command(label="Clear Detect", command=lambda: self.clear_detect())
         run_menu.add_command(label="Clear All Detect", command=lambda: self.clear_detect(True))
@@ -82,7 +88,7 @@ class App(tk.Tk):
         menu.add_cascade(label="Help", menu=help_menu)
         # Hiển thị menu
         self.config(menu=menu)
-    
+
     def clear_detect(self, clear_all=False):
         if(not mb.askyesno(title="Warning", message="Do you want to clear the detection result ?", icon=mb.WARNING, parent=self)):
             return
@@ -109,14 +115,14 @@ class App(tk.Tk):
             img = ImageTk.PhotoImage(img)
             self.current_selected_image_label.config(image=img)
             self.current_selected_image_label.image = img
-        
+
         if(self.current_selected_image_label is not None):
             img_current = self.img_dict[self.current_selected_image_label.image_id].image_original
             img_current.thumbnail((700, 700), Image.LANCZOS)
             img_current = ImageTk.PhotoImage(img_current)
             self.selected_image_label.config(image=img_current)
             self.selected_image_label.image = img_current
-            
+
     def start_detect(self, detect_all=False):
         self.predictor.cfg(self.radio_model.get())
         if(detect_all):
@@ -292,7 +298,6 @@ class App(tk.Tk):
             # Thêm ảnh vào từ điển img_dict
             self.img_dict[self.img_id] = label
             self.img_id += 1
-
 
     def quit(self):
         message = "Do you want to close the window?"
