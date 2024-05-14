@@ -56,7 +56,7 @@ print(outputs.pred_boxes)
 v = Visualizer(
     img[:, :, ::-1],  # chuyển từ BGR (opencv) sang RGB
     MetadataCatalog.get(config.DATASETS.TRAIN[0]),
-    scale=1.5,
+    font_size_scale=1.2,
 )
 out = v.draw_instance_predictions(outputs)
 plt.imshow(out.get_image())
@@ -219,7 +219,7 @@ print(outputs.pred_boxes)
 # %%
 # NOTE: Sử dụng Visualizer vẽ kết quả lên ảnh
 fruit_metadata = {"thing_classes": class_names}
-v = Visualizer(img[:, :, ::-1], metadata=fruit_metadata, font_size_scale=1.5)
+v = Visualizer(img[:, :, ::-1], metadata=fruit_metadata, font_size_scale=1.2)
 out = v.draw_instance_predictions(outputs)
 plt.imshow(out.get_image())
 plt.axis("off")
